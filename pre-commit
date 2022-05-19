@@ -1,0 +1,18 @@
+#!/bin/bash
+HW='COD-Lab/fpga/design/ucas-cod/hardware/sources'
+SW='COD-Lab/software/workload/ucas-cod/benchmark/simple_test'
+
+rm -r hardware
+mkdir hardware
+cp -r $HW/alu $HW/example $HW/reg_file $HW/shifter $HW/simple_cpu hardware/
+mkdir hardware/custom_cpu
+cp -r $HW/custom_cpu/mips $HW/custom_cpu/riscv32 hardware/custom_cpu
+git add hardware/
+
+rm -r software
+mkdir software
+mkdir software/common
+cp -r $SW/common/*.c software/common/
+mkdir software/microbench
+cp -r $SW/microbench/*.c software/microbench/
+git add software/
