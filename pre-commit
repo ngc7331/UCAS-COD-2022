@@ -2,6 +2,8 @@
 HW='COD-Lab/fpga/design/ucas-cod/hardware/sources'
 SW='COD-Lab/software/workload/ucas-cod/benchmark/simple_test'
 
+cd COD-Lab && git pull && cd ..
+
 rm -r hardware
 mkdir hardware
 cp -r $HW/alu $HW/example $HW/reg_file $HW/shifter $HW/simple_cpu hardware/
