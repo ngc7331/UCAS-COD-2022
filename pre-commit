@@ -3,6 +3,7 @@ HW='COD-Lab/fpga/design/ucas-cod/hardware/sources'
 SW='COD-Lab/software/workload/ucas-cod/benchmark/simple_test'
 
 cd COD-Lab && git pull && cd ..
+git add COD-Lab
 
 rm -r hardware
 mkdir hardware
