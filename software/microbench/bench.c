@@ -65,6 +65,7 @@ int main() {
     } else {
       unsigned long msec = ULONG_MAX;
       unsigned long memtime = ULONG_MAX;
+      unsigned long nop = ULONG_MAX;
       int succ = 1;
       for (int i = 0; i < REPEAT; i ++) {
         Result res;
@@ -73,6 +74,7 @@ int main() {
         succ &= res.pass;
         if (res.msec < msec) msec = res.msec;
         if (res.memtime < memtime) memtime = res.memtime;
+        if (res.nop < nop) nop = res.nop;
       }
 
       if (succ) printk(" Passed.\n");
@@ -86,6 +88,7 @@ int main() {
       //   you can ignore according to your performance counters semantics.
       printk("Cycles: %u\n", msec);
       printk("Mem access cycles: %u\n", memtime);
+      printk("NOP count: %u\n", nop);
     }
   }
 

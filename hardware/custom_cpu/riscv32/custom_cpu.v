@@ -91,6 +91,16 @@ module custom_cpu(
     end
     assign cpu_perf_cnt_1 = mem_cycle_cnt;
 
+    reg [31:0] nop_cnt;
+    always @(posedge clk) begin
+        if (rst) begin
+            nop_cnt <= 32'b0;
+        end
+        else if (current_state == ID && ~|IR) begin
+            nop_cnt <= nop_cnt + 1;
+        end
+    end
+    assign cpu_perf_cnt_2 = nop_cnt;
 
 
     /* --- states --- */
@@ -263,7 +273,7 @@ module custom_cpu(
     assign RF_raddr1 = rs1;
     assign RF_raddr2 = rs2;
     assign RF_wen    = current_state[8] & (T_R | T_I | T_J | T_U);
-    assign RF_wdata  = T_R & ~T_RS | T_IC & ~T_ICS | T_U & opcode[6] ? ALU_Res // T_U & opcode[6] = AUIPC
+    assign RF_wdata  = T_R & ~T_RS | T_IC & ~T_ICS | T_U & ~opcode[5] ? ALU_Res // T_U & ~opcode[5] = AUIPC
                      : T_RS | T_ICS ? Shifter_Res
                      : T_IJ | T_J ? __4PC
                      : T_IL ? __Read_data_ext
@@ -287,10 +297,10 @@ module custom_cpu(
     wire [2:0] ALUop_g;
     wire Overflow, CarryOut, Zero;
 
-    assign ALU_A = current_state[2] | current_state[4] & T_B | T_J | T_U & opcode[6]? PC
+    assign ALU_A = current_state[2] | current_state[4] & T_B | T_J | T_U & ~opcode[5]? PC
                  : RF_rdata1; // T_B | T_R | T_I 
     assign ALU_B = current_state[2] ? 4
-                 : current_state[4] & T_B | T_J | T_U & opcode[6]? imm
+                 : current_state[4] & T_B | T_J | T_U & ~opcode[5]? imm
                  : T_R | T_B ? RF_rdata2
                  : imm; // T_I
 
@@ -298,7 +308,7 @@ module custom_cpu(
                    : funct3 == 3'b010 ? 3'b111
                    : funct3 == 3'b011 | funct3 == 3'b100 ? funct3
                    : ~funct3;
-    assign ALUop = current_state[2] | current_state[4] & T_B | T_S | T_IL | T_IJ | T_J | T_U & opcode[6]? 3'b010
+    assign ALUop = current_state[2] | current_state[4] & T_B | T_S | T_IL | T_IJ | T_J | T_U & ~opcode[5]? 3'b010
                  : T_R | T_IC ? ALUop_g
                  : {~funct3[1], 1'b1, funct3[2]}; // T_B
 
