@@ -13,7 +13,8 @@ volatile unsigned long *perf_cnt[] = {
 
 #define cycle_cnt (perf_cnt[0])
 #define mem_cycle_cnt (perf_cnt[1])
-#define nop_cnt (perf_cnt[2])
+#define inst_cnt (perf_cnt[2])
+#define nop_cnt (perf_cnt[3])
 
 unsigned long _uptime() {
   // TODO [COD]
@@ -23,6 +24,10 @@ unsigned long _uptime() {
 
 unsigned long _memtime() {
   return *mem_cycle_cnt;
+}
+
+unsigned long _inst() {
+    return *inst_cnt;
 }
 
 unsigned long _nop() {
@@ -36,6 +41,7 @@ void bench_prepare(Result *res) {
   //   static variables or add additional fields in `struct Result`
   res->msec = _uptime();
   res->memtime = _memtime();
+  res->inst = _inst();
   res->nop = _nop();
 }
 
@@ -44,6 +50,7 @@ void bench_done(Result *res) {
   //  Add postprocess code, record performance counters' current states.
   res->msec = _uptime() - res->msec;
   res->memtime = _memtime() - res->memtime;
+  res->inst = _inst() - res->inst;
   res->nop = _nop() - res->nop;
 }
 

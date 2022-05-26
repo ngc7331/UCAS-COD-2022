@@ -93,6 +93,17 @@ module custom_cpu(
 	end
 	assign cpu_perf_cnt_1 = mem_cycle_cnt;
 
+    reg [31:0] inst_cnt;
+    always @(posedge clk) begin
+        if (rst) begin
+            inst_cnt <= 32'b0;
+        end
+        else if (current_state == ID) begin
+            inst_cnt <= inst_cnt + 1;
+        end
+    end
+    assign cpu_perf_cnt_2 = inst_cnt;
+
     reg [31:0] nop_cnt;
     always @(posedge clk) begin
         if (rst) begin
@@ -102,7 +113,7 @@ module custom_cpu(
             nop_cnt <= nop_cnt + 1;
         end
     end
-    assign cpu_perf_cnt_2 = nop_cnt;
+    assign cpu_perf_cnt_3 = nop_cnt;
 
 
 	/* --- states --- */

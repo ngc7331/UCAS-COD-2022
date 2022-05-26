@@ -93,6 +93,17 @@ module custom_cpu(
     end
     assign cpu_perf_cnt_1 = mem_cycle_cnt;
 
+    reg [31:0] inst_cnt;
+    always @(posedge clk) begin
+        if (rst) begin
+            inst_cnt <= 32'b0;
+        end
+        else if (current_state == ID) begin
+            inst_cnt <= inst_cnt + 1;
+        end
+    end
+    assign cpu_perf_cnt_2 = inst_cnt;
+
     reg [31:0] nop_cnt;
     always @(posedge clk) begin
         if (rst) begin
@@ -102,7 +113,7 @@ module custom_cpu(
             nop_cnt <= nop_cnt + 1;
         end
     end
-    assign cpu_perf_cnt_2 = nop_cnt;
+    assign cpu_perf_cnt_3 = nop_cnt;
 
 
     /* --- states --- */
@@ -143,7 +154,7 @@ module custom_cpu(
             end
             IW: begin
                 if (Inst_Valid) begin
-                    next_state = ID;    
+                    next_state = ID;
                 end
                 else begin
                     next_state = IW;
@@ -161,7 +172,7 @@ module custom_cpu(
                 end
                 else if (T_S) begin   // S-type
                     next_state = ST;
-                end 
+                end
                 else begin            // R-type, I-type caculate, JALR, J-type, U-type
                     next_state = WB;
                 end
@@ -195,7 +206,7 @@ module custom_cpu(
             end
             default: begin
                 next_state = IF;
-            end 
+            end
         endcase
     end
 
@@ -300,7 +311,7 @@ module custom_cpu(
     wire Overflow, CarryOut, Zero;
 
     assign ALU_A = current_state[2] | current_state[4] & T_B | T_J | T_U & ~opcode[5]? PC
-                 : RF_rdata1; // T_B | T_R | T_I 
+                 : RF_rdata1; // T_B | T_R | T_I
     assign ALU_B = current_state[2] ? 4
                  : current_state[4] & T_B | T_J | T_U & ~opcode[5]? imm
                  : T_R | T_B ? RF_rdata2
@@ -356,7 +367,7 @@ module custom_cpu(
     wire [1:0]  mem_Shiftop;
     wire [31:0] mem_Shifter_Res;
     assign mem_Shifter_A = {28'b0, {2{funct3[1]}}, funct3[1] | funct3[0], 1'b1};  // T_S
-    assign mem_Shifter_B = {3'b000, ALU_Res[1:0]};                                // T_S 
+    assign mem_Shifter_B = {3'b000, ALU_Res[1:0]};                                // T_S
     assign mem_Shiftop = {T_IL, 1'b0}; // write<<, read>>
 
     shifter mem_shifter (
