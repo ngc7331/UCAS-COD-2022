@@ -18,4 +18,6 @@ mkdir software/common
 cp -r $SW/common/*.c software/common/
 mkdir software/microbench
 cp -r $SW/microbench/*.c software/microbench/
+mkdir software/include
+cp -r $SW/include/perf_cnt.h software/include/
 git add software/
