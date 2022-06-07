@@ -3,6 +3,8 @@
 #include "mul.h"
 #include "div.h"
 
+#define MAX(a,b) ((a)>(b)?(a):(b))
+
 #define FRAC_BIT 10
 
 #define RD_ADDR 135106448
@@ -100,6 +102,49 @@ void convolution()
 	conv_size.d3 = conv_out_w;
 
 	//TODO: Please add your implementation here
+    // convert to pointer of array
+    typedef short IN_TYPE[rd_size.d1][rd_size.d2][rd_size.d3];
+    IN_TYPE *IN = (IN_TYPE *) (in + input_offset);
+
+    typedef short WEIGHT_TYPE[weight_size.d0][weight_size.d1][mul(weight_size.d2, weight_size.d3) + 1]; // 3rdsize = height * weight + 1(bias)
+    WEIGHT_TYPE *WEIGHT = (WEIGHT_TYPE *) weight;
+
+    typedef short OUT_TYPE[conv_size.d1][conv_size.d2][conv_size.d3];
+    OUT_TYPE *OUT = (OUT_TYPE *) (out + output_offset);
+
+    // convolution
+    for (int no=0; no<wr_size.d1; no++) {
+        for (int ni=0; ni<rd_size.d1; ni++) {
+            for (int y=0; y<conv_out_h; y++) {
+                for (int x=0; x<conv_out_w; x++) {
+                    // ni == 0 -> a new output -> set initial value = bias
+                    if (ni == 0)
+                        (*OUT)[no][y][x] = (*WEIGHT)[no][0][0];
+                    // temp result
+                    int conv_res = 0;
+                    // perform 1d conv
+                    for (int ky=0; ky<weight_size.d2; ky++) {
+                        int yoffset = mul(ky, weight_size.d3);
+                        int ih = ky + mul(y, stride) - pad;
+                        for (int kx=0; kx<weight_size.d3; kx++) {
+                            int iw = kx + mul(x, stride) - pad;
+                            // iw < 0 etc. -> is padding -> +0
+                            if (iw > 0 && iw < input_fm_w && ih > 0 && ih < input_fm_h) {
+                                int tmp = mul((*IN)[ni][ih][iw], (*WEIGHT)[no][ni][yoffset + kx + 1]);
+                                printf("ky=%x, ih=%x, kx=%x, iw=%x, in=%x weight=%x tmp=%x\n", ky, ih, kx, iw, (*IN)[ni][ih][iw], (*WEIGHT)[no][ni][yoffset + kx + 1], tmp);
+                                conv_res += tmp;
+                            }
+                        }
+                    }
+                    // save result to mem
+                    printf("---no=%d y=%d x=%d res=%x\n", no, y, x, conv_res);
+                    (*OUT)[no][y][x] += conv_res >> FRAC_BIT;
+                }
+            }
+        }
+        printf("------\n\n");
+        return ;
+    }
 }
 
 void pooling()
@@ -138,7 +183,35 @@ void pooling()
 	}
 
 	//TODO: Please add your implementation here
+	short *in = (short *)addr.wr_addr;
+    // convert to pointer of array
+    typedef short IN_TYPE[conv_size.d1][conv_size.d2][conv_size.d3];
+    IN_TYPE *IN = (IN_TYPE *) (in + input_offset);
 
+    typedef short OUT_TYPE[wr_size.d1][pool_out_h][pool_out_w];
+    OUT_TYPE *OUT = (OUT_TYPE *) (out + output_offset);
+
+    // pooling
+    for (int no=0; no<wr_size.d1; no++) {
+        for (int y=0; y<pool_out_h; y++) {
+            for (int x=0; x<pool_out_w; x++) {
+                short max = 0;
+                for (int ky=0; ky<KERN_ATTR_POOL_KERN_SIZE; ky++) {
+                    int ih = ky + mul(y, stride) - pad;
+                    for (int kx=0; kx<KERN_ATTR_POOL_KERN_SIZE; kx++) {
+                        int iw = kx + mul(x, stride) - pad;
+                        if (iw > 0 && iw < input_fm_w && ih > 0 && ih < input_fm_h)
+                            max = MAX(max, (*IN)[no][ih][iw]);
+                        printf("kx=%x, ih=%x, ky=%x, iw=%x, new_max=%x, in=%x\n", kx, ih, ky, iw, max, (*IN)[no][ih][iw]);
+                    }
+                }
+                printf("---no=%d y=%d x=%d max=%x\n", no, y, x, max);
+                (*OUT)[no][y][x] = max;
+            }
+        }
+        printf("------\n\n");
+        return ;
+    }
 }
 
 #ifdef USE_HW_ACCEL
@@ -148,6 +221,8 @@ void launch_hw_accel()
 	volatile int* gpio_done = (void*)(GPIO_DONE_ADDR);
 
 	//TODO: Please add your implementation here
+    *gpio_start = 1;
+    while (!(*gpio_done & 1)) ;
 }
 #endif
 
