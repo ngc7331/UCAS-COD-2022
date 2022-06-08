@@ -101,13 +101,14 @@ void convolution()
 	conv_size.d3 = conv_out_w;
 
 	//TODO: Please add your implementation here
-#ifndef USE_MUL
+    #ifndef USE_MUL
     in += input_offset;
     out += output_offset;
+    // caculate frame size to reduce duplicate calculations
     unsigned in_fm_size = mul(rd_size.d2, rd_size.d3);
     unsigned weight_fm_size = mul(weight_size.d2, weight_size.d3) + 1;
     unsigned out_fm_size = mul(conv_size.d2, conv_size.d3);
-#else
+    #else
     // convert to pointer of array
     typedef short IN_TYPE[rd_size.d1][rd_size.d2][rd_size.d3];
     IN_TYPE *IN = (IN_TYPE *) (in + input_offset);
@@ -117,58 +118,86 @@ void convolution()
 
     typedef short OUT_TYPE[conv_size.d1][conv_size.d2][conv_size.d3];
     OUT_TYPE *OUT = (OUT_TYPE *) (out + output_offset);
-#endif
+    #endif
+
     // convolution
     for (int no=0; no<wr_size.d1; no++) {
+        // reset input pointer *ini for different outputs
+        #ifndef USE_MUL
+        short *ini = in;
+        #endif
+
         for (int ni=0; ni<rd_size.d1; ni++) {
-#ifndef USE_MUL
+            // reset output pointer *outi for different inputs
+            #ifndef USE_MUL
             short *outi = out;
-#endif
+            #endif
+
             for (int y=0; y<conv_out_h; y++) {
+                // caculate ybase in advance to reduce duplicate calculations <- [1]
+                int ybase = mul(y, stride) - pad;
+
                 for (int x=0; x<conv_out_w; x++) {
+                    // the same as [1]
+                    int xbase = mul(x, stride) - pad;
+
                     // ni == 0 -> a new output -> set initial value = bias
-                    if (ni == 0)
-#ifndef USE_MUL
+                    if (ni == 0) {
+                        #ifndef USE_MUL
                         *outi = *weight;
-#else
+                        #else
                         (*OUT)[no][y][x] = (*WEIGHT)[no][0][0];
-#endif
-                    // temp result
+                        #endif
+                    }
+
+                    // temp result saved as int to reduce accuracy loss
                     int conv_res = 0;
+
                     // perform 1d conv
                     for (int ky=0; ky<weight_size.d2; ky++) {
+                        // the same as [1]
                         int yoffset = mul(ky, weight_size.d3);
-                        int ih = ky + mul(y, stride) - pad;
+                        int ih = ky + ybase;
+
                         for (int kx=0; kx<weight_size.d3; kx++) {
-                            int iw = kx + mul(x, stride) - pad;
-                            // iw < 0 etc. -> is padding -> +0
+                            // the same as [1]
+                            int iw = kx + xbase;
+
+                            // iw < 0 -> is padding -> +0, the same applies to others
                             if (iw >= 0 && iw < input_fm_w && ih >= 0 && ih < input_fm_h) {
-#ifndef USE_MUL
+                                #ifndef USE_MUL
                                 conv_res += mul(
-                                    *(in + mul(ni, in_fm_size) + mul(ih, input_fm_w) + iw),
+                                    *(ini + mul(ih, input_fm_w) + iw),
                                     *(weight + yoffset + kx + 1)
                                 );
-#else
+                                #else
                                 conv_res += mul((*IN)[ni][ih][iw], (*WEIGHT)[no][ni][yoffset + kx + 1]);
-#endif
+                                #endif
                             }
                         }
                     }
-                    // save result to mem
-#ifndef USE_MUL
+
+                    // save result to mem & point to next pixel
+                    #ifndef USE_MUL
                     *outi += conv_res >> FRAC_BIT;
                     outi ++;
-#else
+                    #else
                     (*OUT)[no][y][x] += conv_res >> FRAC_BIT;
-#endif
+                    #endif
                 }
             }
+            // *outi has pointed to the next output naturally by ++
+            // *ini point to next input
+            #ifndef USE_MUL
+            ini += in_fm_size;
+            #endif
         }
-#ifndef USE_MUL
-        // all input has added, switch to next output
+
+        // all input has added, *out / *weight point to next output / weight
+        #ifndef USE_MUL
         out += out_fm_size;
         weight += weight_fm_size;
-#endif
+        #endif
     }
 }
 
@@ -213,46 +242,67 @@ void pooling()
 
 	//TODO: Please add your implementation here
 	short *in = (short *)addr.wr_addr;
-#ifndef USE_MUL
+
+    #ifndef USE_MUL
     in += input_offset;
     out += output_offset;
     unsigned in_fm_size = mul(conv_size.d2, conv_size.d3);
-#else
+    #else
     // convert to pointer of array
     typedef short IN_TYPE[conv_size.d1][conv_size.d2][conv_size.d3];
     IN_TYPE *IN = (IN_TYPE *) (in + input_offset);
 
     typedef short OUT_TYPE[wr_size.d1][pool_out_h][pool_out_w];
     OUT_TYPE *OUT = (OUT_TYPE *) (out + output_offset);
-#endif
+    #endif
+
     // pooling
     for (int no=0; no<wr_size.d1; no++) {
         for (int y=0; y<pool_out_h; y++) {
+            // the same as [1]
+            int ybase = mul(y, stride) - pad;
+
             for (int x=0; x<pool_out_w; x++) {
-                short max = 0x8000; // smallest of short
+                // the same as [1]
+                int xbase = mul(x, stride) - pad;
+
+                // max initialized as smallest of short
+                short max = 0x8000;
+
                 for (int ky=0; ky<KERN_ATTR_POOL_KERN_SIZE; ky++) {
-                    int ih = ky + mul(y, stride) - pad;
+                    // the same as [1]
+                    int ih = ky + ybase;
+
                     for (int kx=0; kx<KERN_ATTR_POOL_KERN_SIZE; kx++) {
-                        int iw = kx + mul(x, stride) - pad;
-                        if (iw >= 0 && iw < input_fm_w && ih >= 0 && ih < input_fm_h)
-#ifndef USE_MUL
+                        // the same as [1]
+                        int iw = kx + xbase;
+
+                        // iw < 0 => padding, others are the same
+                        if (iw >= 0 && iw < input_fm_w && ih >= 0 && ih < input_fm_h) {
+                            #ifndef USE_MUL
                             max = MAX(max, *(in + mul(ih, input_fm_w) + iw));
-#else
+                            #else
                             max = MAX(max, (*IN)[no][ih][iw]);
-#endif
+                            #endif
+                        }
                     }
                 }
-#ifndef USE_MUL
+
+                // save result to mem & point to next pixel
+                #ifndef USE_MUL
                 *out = max;
                 out ++;
-#else
+                #else
                 (*OUT)[no][y][x] = max;
-#endif
+                #endif
             }
         }
-#ifndef USE_MUL
+
+        // *out has pointed to the next output naturally by ++
+        // *in point to next input
+        #ifndef USE_MUL
         in += in_fm_size;
-#endif
+        #endif
     }
 }
 
