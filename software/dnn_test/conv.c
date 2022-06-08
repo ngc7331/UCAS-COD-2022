@@ -315,13 +315,12 @@ int main()
 #endif
 
     bench_done(&res);
-
-	int result = comparing();
-	printf("benchmark finished\n");
-
     printf("Cycles: %u\n", res.msec);
     printf("Mem access cycles: %u\n", res.memtime);
     printf("Instruction count: %u\n", res.inst);
+
+	int result = comparing();
+	printf("benchmark finished\n");
 
 	if (result == 0) {
 		hit_good_trap();
