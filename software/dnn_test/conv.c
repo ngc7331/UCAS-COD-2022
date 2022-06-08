@@ -186,7 +186,7 @@ void convolution()
                     #endif
                 }
             }
-            // *outi has pointed to the next output naturally by ++
+
             // *ini point to next input
             #ifndef USE_MUL
             ini += in_fm_size;
