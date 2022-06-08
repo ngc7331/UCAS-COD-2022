@@ -1,9 +1,8 @@
+#include "perf_cnt.h"
 #include "printf.h"
 #include "trap.h"
 #include "mul.h"
 #include "div.h"
-
-#define MAX(a,b) ((a)>(b)?(a):(b))
 
 #define FRAC_BIT 10
 
@@ -102,6 +101,13 @@ void convolution()
 	conv_size.d3 = conv_out_w;
 
 	//TODO: Please add your implementation here
+#ifndef USE_MUL
+    in += input_offset;
+    out += output_offset;
+    unsigned in_fm_size = mul(rd_size.d2, rd_size.d3);
+    unsigned weight_fm_size = mul(weight_size.d2, weight_size.d3) + 1;
+    unsigned out_fm_size = mul(conv_size.d2, conv_size.d3);
+#else
     // convert to pointer of array
     typedef short IN_TYPE[rd_size.d1][rd_size.d2][rd_size.d3];
     IN_TYPE *IN = (IN_TYPE *) (in + input_offset);
@@ -111,15 +117,22 @@ void convolution()
 
     typedef short OUT_TYPE[conv_size.d1][conv_size.d2][conv_size.d3];
     OUT_TYPE *OUT = (OUT_TYPE *) (out + output_offset);
-
+#endif
     // convolution
     for (int no=0; no<wr_size.d1; no++) {
         for (int ni=0; ni<rd_size.d1; ni++) {
+#ifndef USE_MUL
+            short *outi = out;
+#endif
             for (int y=0; y<conv_out_h; y++) {
                 for (int x=0; x<conv_out_w; x++) {
                     // ni == 0 -> a new output -> set initial value = bias
                     if (ni == 0)
+#ifndef USE_MUL
+                        *outi = *weight;
+#else
                         (*OUT)[no][y][x] = (*WEIGHT)[no][0][0];
+#endif
                     // temp result
                     int conv_res = 0;
                     // perform 1d conv
@@ -129,22 +142,38 @@ void convolution()
                         for (int kx=0; kx<weight_size.d3; kx++) {
                             int iw = kx + mul(x, stride) - pad;
                             // iw < 0 etc. -> is padding -> +0
-                            if (iw > 0 && iw < input_fm_w && ih > 0 && ih < input_fm_h) {
-                                int tmp = mul((*IN)[ni][ih][iw], (*WEIGHT)[no][ni][yoffset + kx + 1]);
-                                printf("ky=%x, ih=%x, kx=%x, iw=%x, in=%x weight=%x tmp=%x\n", ky, ih, kx, iw, (*IN)[ni][ih][iw], (*WEIGHT)[no][ni][yoffset + kx + 1], tmp);
-                                conv_res += tmp;
+                            if (iw >= 0 && iw < input_fm_w && ih >= 0 && ih < input_fm_h) {
+#ifndef USE_MUL
+                                conv_res += mul(
+                                    *(in + mul(ni, in_fm_size) + mul(ih, input_fm_w) + iw),
+                                    *(weight + yoffset + kx + 1)
+                                );
+#else
+                                conv_res += mul((*IN)[ni][ih][iw], (*WEIGHT)[no][ni][yoffset + kx + 1]);
+#endif
                             }
                         }
                     }
                     // save result to mem
-                    printf("---no=%d y=%d x=%d res=%x\n", no, y, x, conv_res);
+#ifndef USE_MUL
+                    *outi += conv_res >> FRAC_BIT;
+                    outi ++;
+#else
                     (*OUT)[no][y][x] += conv_res >> FRAC_BIT;
+#endif
                 }
             }
         }
-        printf("------\n\n");
-        return ;
+#ifndef USE_MUL
+        // all input has added, switch to next output
+        out += out_fm_size;
+        weight += weight_fm_size;
+#endif
     }
+}
+
+short MAX(short a, short b) {
+    return a > b ? a : b;
 }
 
 void pooling()
@@ -184,33 +213,46 @@ void pooling()
 
 	//TODO: Please add your implementation here
 	short *in = (short *)addr.wr_addr;
+#ifndef USE_MUL
+    in += input_offset;
+    out += output_offset;
+    unsigned in_fm_size = mul(conv_size.d2, conv_size.d3);
+#else
     // convert to pointer of array
     typedef short IN_TYPE[conv_size.d1][conv_size.d2][conv_size.d3];
     IN_TYPE *IN = (IN_TYPE *) (in + input_offset);
 
     typedef short OUT_TYPE[wr_size.d1][pool_out_h][pool_out_w];
     OUT_TYPE *OUT = (OUT_TYPE *) (out + output_offset);
-
+#endif
     // pooling
     for (int no=0; no<wr_size.d1; no++) {
         for (int y=0; y<pool_out_h; y++) {
             for (int x=0; x<pool_out_w; x++) {
-                short max = 0;
+                short max = 0x8000; // smallest of short
                 for (int ky=0; ky<KERN_ATTR_POOL_KERN_SIZE; ky++) {
                     int ih = ky + mul(y, stride) - pad;
                     for (int kx=0; kx<KERN_ATTR_POOL_KERN_SIZE; kx++) {
                         int iw = kx + mul(x, stride) - pad;
-                        if (iw > 0 && iw < input_fm_w && ih > 0 && ih < input_fm_h)
+                        if (iw >= 0 && iw < input_fm_w && ih >= 0 && ih < input_fm_h)
+#ifndef USE_MUL
+                            max = MAX(max, *(in + mul(ih, input_fm_w) + iw));
+#else
                             max = MAX(max, (*IN)[no][ih][iw]);
-                        printf("kx=%x, ih=%x, ky=%x, iw=%x, new_max=%x, in=%x\n", kx, ih, ky, iw, max, (*IN)[no][ih][iw]);
+#endif
                     }
                 }
-                printf("---no=%d y=%d x=%d max=%x\n", no, y, x, max);
+#ifndef USE_MUL
+                *out = max;
+                out ++;
+#else
                 (*OUT)[no][y][x] = max;
+#endif
             }
         }
-        printf("------\n\n");
-        return ;
+#ifndef USE_MUL
+        in += in_fm_size;
+#endif
     }
 }
 
@@ -259,6 +301,8 @@ int comparing()
 
 int main()
 {
+    Result res;
+    bench_prepare(&res);
 
 #ifdef USE_HW_ACCEL
 	printf("Launching task...\n");
@@ -270,8 +314,14 @@ int main()
 	pooling();
 #endif
 
+    bench_done(&res);
+
 	int result = comparing();
 	printf("benchmark finished\n");
+
+    printf("Cycles: %u\n", res.msec);
+    printf("Mem access cycles: %u\n", res.memtime);
+    printf("Instruction count: %u\n", res.inst);
 
 	if (result == 0) {
 		hit_good_trap();

@@ -265,7 +265,8 @@ module custom_cpu(
     // type flags
     wire T_R, T_RS, T_S, T_B, T_U, T_J, T_I, T_IL, T_IC, T_ICS, T_IJ;
     assign T_R  = {opcode[5:4], opcode[2]} == 3'b110;
-    assign T_RS = T_R & funct3[1:0] == 2'b01;
+    assign T_RS = T_R & ~funct7[0] & funct3[1:0] == 2'b01;
+    assign T_Mul = T_R & funct7[0];
     assign T_S  = opcode[6:4] == 3'b010;
     assign T_B  = {opcode[6], opcode[2]} == 2'b10;
     assign T_J  = {opcode[6], opcode[3:2]} == 3'b111;
@@ -286,7 +287,8 @@ module custom_cpu(
     assign RF_raddr1 = rs1;
     assign RF_raddr2 = rs2;
     assign RF_wen    = current_state[8] & (T_R | T_I | T_J | T_U);
-    assign RF_wdata  = T_R & ~T_RS | T_IC & ~T_ICS | T_U & ~opcode[5] ? ALU_Res // T_U & ~opcode[5] = AUIPC
+    assign RF_wdata  = T_R & ~T_RS & ~T_Mul | T_IC & ~T_ICS | T_U & ~opcode[5] ? ALU_Res // T_U & ~opcode[5] = AUIPC
+                     : T_Mul ? Mul_Res
                      : T_RS | T_ICS ? Shifter_Res
                      : T_IJ | T_J ? __4PC
                      : T_IL ? __Read_data_ext
@@ -338,6 +340,12 @@ module custom_cpu(
     always @(posedge clk) begin
         __ALU_Res <= ALU_Res;
     end
+
+    // mul
+    wire [63:0] Mul_Res_full;
+    wire [31:0] Mul_Res;
+    assign Mul_Res_full = RF_rdata1 * RF_rdata2;
+    assign Mul_Res = funct3[1:0] == 2'b00 ? Mul_Res_full[31:0] : Mul_Res_full[63:32];
 
     // main shifter
     wire [31:0] Shifter_A;
