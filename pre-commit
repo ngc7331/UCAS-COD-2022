@@ -12,15 +12,9 @@ git add COD-Lab
 
 # hardware
 rm -r hardware
-mkdir hardware
-cp -r $HW/alu $HW/example $HW/reg_file $HW/shifter $HW/simple_cpu hardware/
-
-mkdir hardware/custom_cpu
-cp -r $HW/custom_cpu/mips $HW/custom_cpu/riscv32 hardware/custom_cpu
-
-mkdir hardware/custom_cpu/dma
-cp -r $HW/custom_cpu/dma/engine_core.v hardware/custom_cpu/dma/
+cp -r $HW hardware
 sed -i "2,21d" hardware/custom_cpu/dma/engine_core.v
+sed -i "1,9d" hardware/custom_cpu/dma/dma_engine.v
 
 git add hardware/
 
