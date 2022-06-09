@@ -2,24 +2,46 @@
 HW='COD-Lab/fpga/design/ucas-cod/hardware/sources'
 SW='COD-Lab/software/workload/ucas-cod/benchmark/simple_test'
 
+
+
+# update COD-Lab
 cd COD-Lab && git pull && cd .. || exit 1
 git add COD-Lab
 
+
+
+# hardware
 rm -r hardware
 mkdir hardware
 cp -r $HW/alu $HW/example $HW/reg_file $HW/shifter $HW/simple_cpu hardware/
+
 mkdir hardware/custom_cpu
 cp -r $HW/custom_cpu/mips $HW/custom_cpu/riscv32 hardware/custom_cpu
+
+mkdir hardware/custom_cpu/dma
+cp -r $HW/custom_cpu/dma/engine_core.v hardware/custom_cpu/dma/
+sed -i "2,21d" hardware/custom_cpu/dma/engine_core.v
+
 git add hardware/
 
+
+
+# software
 rm -r software
 mkdir software
 mkdir software/common
-cp -r $SW/common/*.c software/common/
+cp -r $SW/common/perf_cnt.c $SW/common/printf.c software/common/
+
 mkdir software/microbench
-cp -r $SW/microbench/*.c software/microbench/
+cp -r $SW/microbench/bench.c software/microbench/
+
 mkdir software/dnn_test
-cp -r $SW/dnn_test/src/*.c software/dnn_test/
+cp -r $SW/dnn_test/src/conv.c software/dnn_test/
+
+mkdir software/dma_test
+cp -r $SW/dma_test/mips/common/intr_handler.S software/dma_test/
+
 mkdir software/include
 cp -r $SW/include/perf_cnt.h software/include/
+
 git add software/
