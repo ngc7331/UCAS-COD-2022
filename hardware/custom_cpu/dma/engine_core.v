@@ -47,6 +47,125 @@ module engine_core #(
 	input               fifo_is_full
 );
 	// TODO: Please add your logic design here
-  
+
+    // --- ctrl & stat ---    
+    // regs
+    reg [31:0] __src_base, __dest_base, __tail_ptr, __head_ptr, __dma_size, __ctrl_stat;
+    always @(posedge clk) begin
+        if (reg_wr_en[0]) begin
+            __src_base <= reg_wr_data;
+        end
+    end
+    always @(posedge clk) begin
+        if (reg_wr_en[1]) begin
+            __dest_base <= reg_wr_data;
+        end
+    end
+    always @(posedge clk) begin
+        if (reg_wr_en[2]) begin
+            __tail_ptr <= reg_wr_data;
+        end
+    end
+    always @(posedge clk) begin
+        if (reg_wr_en[3]) begin
+            __head_ptr <= reg_wr_data;
+        end
+    end
+    always @(posedge clk) begin
+        if (reg_wr_en[4]) begin
+            __dma_size <= reg_wr_data;
+        end
+    end
+    always @(posedge clk) begin
+        if (reg_wr_en[5]) begin
+            __ctrl_stat <= reg_wr_data;
+        end
+    end
+
+    // output
+    assign src_base  = __src_base;
+    assign dest_base = __dest_base;
+    assign tail_ptr  = __tail_ptr;
+    assign head_ptr  = __head_ptr;
+    assign dma_size  = __dma_size;
+    assign ctrl_stat = __ctrl_stat;
+
+
+
+    // states
+    localparam IDLE = 3'b001,
+               REQ  = 3'b010,
+               RW   = 3'b100;
+
+    // --- rd ---
+    // regs
+    reg [2:0] rd_current_state;
+    reg [2:0] rd_next_state;
+
+    // current_state
+    always @(posedge clk) begin
+        if (rst) begin
+            rd_current_state <= IDLE;
+        end
+        else begin
+            rd_current_state <= rd_next_state;
+        end
+    end
+
+    // next_state
+    always @(*) begin
+        case (rd_current_state)
+            IDLE: begin
+                if (wr_current_state == IDLE && head_ptr != tail_ptr) begin
+                    rd_next_state = REQ;
+                end
+                else begin
+                    rd_next_state = IDLE;
+                end
+            end
+            REQ: begin
+                if (rd_req_ready) begin
+                    rd_next_state = RW;
+                end
+                else if (head_ptr == tail_ptr) begin
+                    rd_next_state = IDLE;
+                end
+                else begin
+                    rd_next_state = REQ;
+                end
+            end
+            RW: begin
+                if (rd_valid & rd_last & !fifo_is_full) begin
+                    rd_next_state = REQ;
+                end
+                else begin
+                    rd_next_state = RW;
+                end
+            end
+            default: begin
+                rd_next_state = IDLE;
+            end
+        endcase
+    end
+
+    // read_data
+
+
+
+    // --- wr ---
+    // regs
+    reg [2:0] wr_current_state;
+    reg [2:0] wr_next_state;
+
+    // current_state
+    always @(posedge clk) begin
+        if (rst) begin
+            wr_current_state <= IDLE;
+        end
+        else begin
+            wr_current_state <= wr_next_state;
+        end
+    end
+
 endmodule
 

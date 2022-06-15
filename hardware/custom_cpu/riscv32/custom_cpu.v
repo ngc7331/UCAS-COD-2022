@@ -64,8 +64,13 @@ module custom_cpu(
 * }
 *
 */
-    wire [69:0] inst_retire;
-    assign inst_retire = {RF_wen, RF_waddr, RF_wdata, PC};
+    reg [31:0] retired_PC;
+    always @(posedge clk) begin
+        if (current_state[2] && Inst_Valid) begin  // IW
+            retired_PC <= PC;
+        end
+    end
+	assign inst_retire = {RF_wen, RF_waddr, RF_wdata, retired_PC};
 
     // TODO: Please add your custom CPU code here
 
