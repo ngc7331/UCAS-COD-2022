@@ -159,7 +159,7 @@ module icache_top (
         .data(evict_data[3])
     );
 
-    max max_1 (
+    comparator max_0 (
         .way1(2'b0),
         .way2(2'b1),
         .way(evict_way_tmp[0]),
@@ -167,7 +167,7 @@ module icache_top (
         .data2(evict_data[1]),
         .data(evict_max_tmp[0])
     );
-    max max_2 (
+    comparator max_1 (
         .way1(2'b10),
         .way2(2'b11),
         .way(evict_way_tmp[1]),
@@ -175,7 +175,7 @@ module icache_top (
         .data2(evict_data[3]),
         .data(evict_max_tmp[1])
     );
-    max max_final (
+    comparator max_final (
         .way1(evict_way_tmp[0]),
         .way2(evict_way_tmp[1]),
         .way(evict_way),
@@ -210,7 +210,7 @@ module icache_top (
     // req
     assign to_mem_rd_req_addr = {from_cpu_inst_req_addr[31:5], 5'b0};
     assign to_mem_rd_req_valid = current_state[5];  // MEM_RD
-    
+
     // rsp
     assign to_mem_rd_rsp_ready = current_state[6];  // RECV
 
@@ -333,50 +333,5 @@ module icache_top (
             valid_array[evict_way][from_cpu_index] <= 1;
         end
     end
-
-endmodule
-
-module counter(
-    input clk,
-    input [2:0] index,
-    input rst,
-    input clr,
-    output [31:0] data
-);
-
-    reg [31:0] __data[7:0];
-    always @(posedge clk) begin
-        if (rst) begin
-            __data[0] <= 32'b0;
-            __data[1] <= 32'b0;
-            __data[2] <= 32'b0;
-            __data[3] <= 32'b0;
-            __data[4] <= 32'b0;
-            __data[5] <= 32'b0;
-            __data[6] <= 32'b0;
-            __data[7] <= 32'b0;
-        end
-        else if (clr)
-            __data[index] <= 32'b0;
-        else
-            __data[index] <= __data[index] + 1;
-    end
-    assign data = __data[index];
-
-endmodule
-
-module max(
-    input  [1:0]  way1,
-    input  [1:0]  way2,
-    output [1:0]  way,
-    input  [31:0] data1,
-    input  [31:0] data2,
-    output [31:0] data
-);
-
-    wire flag;
-    assign flag = data1 > data2;
-    assign way  = flag ? way1 : way2;
-    assign data = flag ? data1 : data2;
 
 endmodule

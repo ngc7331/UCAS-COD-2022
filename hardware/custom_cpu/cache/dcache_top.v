@@ -180,7 +180,7 @@ module dcache_top (
                     if (bypass)
                         next_state = WAIT;
                     else
-                        next_state = MEM_RD; 
+                        next_state = MEM_RD;
                 end
                 else
                     next_state = SEND;
@@ -276,7 +276,7 @@ module dcache_top (
         .data(evict_counter[3])
     );
 
-    max max_1 (
+    comparator max_0 (
         .way1(2'b0),
         .way2(2'b1),
         .way(evict_way_tmp[0]),
@@ -284,7 +284,7 @@ module dcache_top (
         .data2(evict_counter[1]),
         .data(evict_max_tmp[0])
     );
-    max max_2 (
+    comparator max_1 (
         .way1(2'b10),
         .way2(2'b11),
         .way(evict_way_tmp[1]),
@@ -292,7 +292,7 @@ module dcache_top (
         .data2(evict_counter[3]),
         .data(evict_max_tmp[1])
     );
-    max max_final (
+    comparator max_final (
         .way1(evict_way_tmp[0]),
         .way2(evict_way_tmp[1]),
         .way(evict_way_num),
@@ -372,7 +372,7 @@ module dcache_top (
     assign data_wdata = cache_write ? ((__from_cpu_mem_req_wdata) << {from_cpu_offset, 3'b000}) & write_mask | cache_data & ~write_mask // write
                       : {rd_buffer[7], rd_buffer[6], rd_buffer[5], rd_buffer[4], rd_buffer[3], rd_buffer[2], rd_buffer[1], rd_buffer[0]};  // read
     assign data_wen = {4{current_state[7]}} & evict_way | {4{cache_write}} & hit_way;  // REFILL on read / write miss ; CACHE on write hit
- 
+
     wire [255:0] cache_data;
     assign cache_data = hit_way[0] ? data_rdata[0]
                       : hit_way[1] ? data_rdata[1]
