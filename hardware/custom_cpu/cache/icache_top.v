@@ -375,7 +375,7 @@ module max(
 );
 
     wire flag;
-    assign flag = way1 > way2;
+    assign flag = data1 > data2;
     assign way  = flag ? way1 : way2;
     assign data = flag ? data1 : data2;
 
