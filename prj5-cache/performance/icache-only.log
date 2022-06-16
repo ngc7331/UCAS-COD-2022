@@ -1,0 +1,246 @@
+RUNNER_CNT = 3
+Completed FPGA configuration
+Launching 15pz benchmark...
+tggetattr: Inappropriate ioctl for device
+reset: before MMIO access...
+reset: MMIO accessed
+axi_firewall_unblock: checking firewall status...
+axi_firewall_unblock: firewall status: 00000000
+main: before DDR accessing...
+main: DDR accessed...
+reset: before MMIO access...
+reset: MMIO accessed
+[15pz] A* 15-puzzle search: * Passed.
+--- Performance counter begin ---
+Cycles:              136913396
+Mem access cycles:   123021753
+  Instruction fetch: 20940920
+  Data write:        4569829
+  Data read:         97511147
+Instruction count:   5224489
+  NOP:               0
+  Jump & Branch:     664067
+---- Performance counter end ----
+benchmark finished
+time 1398.82ms
+reset: before MMIO access...
+reset: MMIO accessed
+./software/workload/ucas-cod/benchmark/simple_test/microbench/riscv32/elf/15pz passed
+Hit good trap
+Launching bf benchmark...
+tggetattr: Inappropriate ioctl for device
+reset: before MMIO access...
+reset: MMIO accessed
+axi_firewall_unblock: checking firewall status...
+axi_firewall_unblock: firewall status: 00000000
+main: before DDR accessing...
+main: DDR accessed...
+reset: before MMIO access...
+reset: MMIO accessed
+[bf] Brainf**k interpreter: * Passed.
+--- Performance counter begin ---
+Cycles:              7274253
+Mem access cycles:   6012955
+  Instruction fetch: 1813387
+  Data write:        23993
+  Data read:         4175678
+Instruction count:   452862
+  NOP:               0
+  Jump & Branch:     138945
+---- Performance counter end ----
+benchmark finished
+time 178.40ms
+reset: before MMIO access...
+reset: MMIO accessed
+./software/workload/ucas-cod/benchmark/simple_test/microbench/riscv32/elf/bf passed
+Hit good trap
+Launching dinic benchmark...
+tggetattr: Inappropriate ioctl for device
+reset: before MMIO access...
+reset: MMIO accessed
+axi_firewall_unblock: checking firewall status...
+axi_firewall_unblock: firewall status: 00000000
+main: before DDR accessing...
+main: DDR accessed...
+reset: before MMIO access...
+reset: MMIO accessed
+[dinic] Dinic's maxflow algorithm: * Passed.
+--- Performance counter begin ---
+Cycles:              306367
+Mem access cycles:   260207
+  Instruction fetch: 68957
+  Data write:        10592
+  Data read:         180798
+Instruction count:   16699
+  NOP:               0
+  Jump & Branch:     2464
+---- Performance counter end ----
+benchmark finished
+time 1785.74ms
+reset: before MMIO access...
+reset: MMIO accessed
+./software/workload/ucas-cod/benchmark/simple_test/microbench/riscv32/elf/dinic passed
+Hit good trap
+Launching fib benchmark...
+tggetattr: Inappropriate ioctl for device
+reset: before MMIO access...
+reset: MMIO accessed
+axi_firewall_unblock: checking firewall status...
+axi_firewall_unblock: firewall status: 00000000
+main: before DDR accessing...
+main: DDR accessed...
+reset: before MMIO access...
+reset: MMIO accessed
+[fib] Fibonacci number: * Passed.
+--- Performance counter begin ---
+Cycles:              17471024
+Mem access cycles:   10401218
+  Instruction fetch: 10203382
+  Data write:        3948
+  Data read:         194046
+Instruction count:   2549533
+  NOP:               0
+  Jump & Branch:     589662
+---- Performance counter end ----
+benchmark finished
+time 204.27ms
+reset: before MMIO access...
+reset: MMIO accessed
+./software/workload/ucas-cod/benchmark/simple_test/microbench/riscv32/elf/fib passed
+Hit good trap
+Launching md5 benchmark...
+tggetattr: Inappropriate ioctl for device
+reset: before MMIO access...
+reset: MMIO accessed
+axi_firewall_unblock: checking firewall status...
+axi_firewall_unblock: firewall status: 00000000
+main: before DDR accessing...
+main: DDR accessed...
+reset: before MMIO access...
+reset: MMIO accessed
+[md5] MD5 digest: * Passed.
+--- Performance counter begin ---
+Cycles:              60336
+Mem access cycles:   46326
+  Instruction fetch: 21386
+  Data write:        599
+  Data read:         24482
+Instruction count:   4923
+  NOP:               0
+  Jump & Branch:     462
+---- Performance counter end ----
+benchmark finished
+time 68.18ms
+reset: before MMIO access...
+reset: MMIO accessed
+./software/workload/ucas-cod/benchmark/simple_test/microbench/riscv32/elf/md5 passed
+Hit good trap
+Launching qsort benchmark...
+tggetattr: Inappropriate ioctl for device
+reset: before MMIO access...
+reset: MMIO accessed
+axi_firewall_unblock: checking firewall status...
+axi_firewall_unblock: firewall status: 00000000
+main: before DDR accessing...
+main: DDR accessed...
+reset: before MMIO access...
+reset: MMIO accessed
+[qsort] Quick sort: * Passed.
+--- Performance counter begin ---
+Cycles:              138219
+Mem access cycles:   112637
+  Instruction fetch: 38711
+  Data write:        5443
+  Data read:         68636
+Instruction count:   9488
+  NOP:               0
+  Jump & Branch:     1848
+---- Performance counter end ----
+benchmark finished
+time 234.35ms
+reset: before MMIO access...
+reset: MMIO accessed
+./software/workload/ucas-cod/benchmark/simple_test/microbench/riscv32/elf/qsort passed
+Hit good trap
+Launching queen benchmark...
+tggetattr: Inappropriate ioctl for device
+reset: before MMIO access...
+reset: MMIO accessed
+axi_firewall_unblock: checking firewall status...
+axi_firewall_unblock: firewall status: 00000000
+main: before DDR accessing...
+main: DDR accessed...
+reset: before MMIO access...
+reset: MMIO accessed
+[queen] Queen placement: * Passed.
+--- Performance counter begin ---
+Cycles:              1282884
+Mem access cycles:   1057096
+  Instruction fetch: 326629
+  Data write:        102145
+  Data read:         628467
+Instruction count:   81498
+  NOP:               0
+  Jump & Branch:     10196
+---- Performance counter end ----
+benchmark finished
+time 41.04ms
+reset: before MMIO access...
+reset: MMIO accessed
+./software/workload/ucas-cod/benchmark/simple_test/microbench/riscv32/elf/queen passed
+Hit good trap
+Launching sieve benchmark...
+tggetattr: Inappropriate ioctl for device
+reset: before MMIO access...
+reset: MMIO accessed
+axi_firewall_unblock: checking firewall status...
+axi_firewall_unblock: firewall status: 00000000
+main: before DDR accessing...
+main: DDR accessed...
+reset: before MMIO access...
+reset: MMIO accessed
+[sieve] Eratosthenes sieve: * Passed.
+--- Performance counter begin ---
+Cycles:              85176
+Mem access cycles:   57452
+  Instruction fetch: 41909
+  Data write:        500
+  Data read:         15188
+Instruction count:   10203
+  NOP:               0
+  Jump & Branch:     2542
+---- Performance counter end ----
+benchmark finished
+time 28.98ms
+reset: before MMIO access...
+reset: MMIO accessed
+./software/workload/ucas-cod/benchmark/simple_test/microbench/riscv32/elf/sieve passed
+Hit good trap
+Launching ssort benchmark...
+tggetattr: Inappropriate ioctl for device
+reset: before MMIO access...
+reset: MMIO accessed
+axi_firewall_unblock: checking firewall status...
+axi_firewall_unblock: firewall status: 00000000
+main: before DDR accessing...
+main: DDR accessed...
+reset: before MMIO access...
+reset: MMIO accessed
+[ssort] Suffix sort: * Passed.
+--- Performance counter begin ---
+Cycles:              4754343
+Mem access cycles:   3037514
+  Instruction fetch: 2483962
+  Data write:        44963
+  Data read:         508752
+Instruction count:   619053
+  NOP:               0
+  Jump & Branch:     133500
+---- Performance counter end ----
+benchmark finished
+time 257.56ms
+reset: before MMIO access...
+reset: MMIO accessed
+./software/workload/ucas-cod/benchmark/simple_test/microbench/riscv32/elf/ssort passed
+Hit good trap
+pass 9 / 9
