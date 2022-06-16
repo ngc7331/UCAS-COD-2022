@@ -113,14 +113,16 @@ module dcache_top (
         case (current_state)
             WAIT: begin
                 if (from_cpu_mem_req_valid) begin
-                    if (bypass & from_cpu_mem_req)        // bypass write
-                        next_state = MEM_WT;
-                    else if (bypass & !from_cpu_mem_req)  // bypass read
-                        next_state = MEM_RD;
-                    else                                  // tag
+                    if (|from_cpu_mem_req_addr[31:30] | ~|from_cpu_mem_req_addr[31:5]) begin  // 0x40000000~0xFFFFFFFF | 0x00~0x1F -> bypass
+                        if (from_cpu_mem_req)  // bypass write
+                            next_state = MEM_WT;
+                        else                   // bypass read
+                            next_state = MEM_RD;
+                    end
+                    else                       // tag
                         next_state = TAG_RD;
                 end
-                else                                      // IDLE
+                else                           // IDLE
                     next_state = WAIT;
             end
             TAG_RD: begin
@@ -156,7 +158,7 @@ module dcache_top (
             RECV: begin
                 if (from_mem_rd_rsp_valid & from_mem_rd_rsp_last) begin
                     if (bypass)
-                        next_state = WAIT;
+                        next_state = RESP;
                     else
                         next_state = REFILL;
                 end
@@ -220,7 +222,7 @@ module dcache_top (
 
     // bypass?
     wire bypass;
-    assign bypass = |__from_cpu_mem_req_addr[31:30] | ~|__from_cpu_mem_req_addr[31:5];  //0x40000000~0xFFFFFFFF | 0x00~0x1F
+    assign bypass = |__from_cpu_mem_req_addr[31:30] | ~|__from_cpu_mem_req_addr[31:5];  // 0x40000000~0xFFFFFFFF | 0x00~0x1F -> bypass
 
     // hit?
     wire hit;
@@ -492,6 +494,9 @@ module dcache_top (
         end
         else if (current_state[2] & __from_cpu_mem_req) begin  // CACHE & write
             dirty_array[hit_way_num][from_cpu_index] <= 1;
+        end
+        else if (current_state[7]) begin                       // REFILL
+            dirty_array[evict_way_num][from_cpu_index] <= 0;
         end
     end
 
