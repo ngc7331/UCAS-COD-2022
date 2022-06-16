@@ -75,6 +75,7 @@ module custom_cpu(
     // TODO: Please add your custom CPU code here
 
     /* --- performance counter --- */
+    // total cycle
     reg [31:0] cycle_cnt;
     always @(posedge clk) begin
         if (rst) begin
@@ -86,39 +87,59 @@ module custom_cpu(
     end
     assign cpu_perf_cnt_0 = cycle_cnt;
 
+    // memory access
     reg [31:0] mem_cycle_cnt;
+    reg [31:0] if_cycle_cnt;
+    reg [31:0] wt_cycle_cnt;
+    reg [31:0] rd_cycle_cnt;
     always @(posedge clk) begin
         if (rst) begin
             mem_cycle_cnt <= 32'b0;
+            if_cycle_cnt <= 32'b0;
+            wt_cycle_cnt <= 32'b0;
+            rd_cycle_cnt <= 32'b0;
         end
-        else if (current_state == IF || current_state == IW ||
-                 current_state == ST || current_state == LD || current_state == RDW) begin
+        else if (current_state == IF || current_state == IW) begin
             mem_cycle_cnt <= mem_cycle_cnt + 1;
+            if_cycle_cnt <= if_cycle_cnt + 1;
+        end
+        else if (current_state == ST) begin
+            mem_cycle_cnt <= mem_cycle_cnt + 1;
+            wt_cycle_cnt <= wt_cycle_cnt + 1;
+        end
+        else if (current_state == LD || current_state == RDW) begin
+            mem_cycle_cnt <= mem_cycle_cnt + 1;
+            rd_cycle_cnt <= rd_cycle_cnt + 1;
         end
     end
     assign cpu_perf_cnt_1 = mem_cycle_cnt;
+    assign cpu_perf_cnt_4 = if_cycle_cnt;
+    assign cpu_perf_cnt_5 = wt_cycle_cnt;
+    assign cpu_perf_cnt_6 = rd_cycle_cnt;
 
+    // instruction
     reg [31:0] inst_cnt;
+    reg [31:0] nop_cnt;
+    reg [31:0] jump_cnt;
     always @(posedge clk) begin
         if (rst) begin
             inst_cnt <= 32'b0;
+            nop_cnt <= 32'b0;
+            jump_cnt <= 32'b0;
         end
         else if (current_state == ID) begin
             inst_cnt <= inst_cnt + 1;
+            if (~|IR) begin
+                nop_cnt <= nop_cnt + 1;
+            end
+            else if (T_B | T_J | T_IJ) begin
+                jump_cnt <= jump_cnt + 1;
+            end
         end
     end
     assign cpu_perf_cnt_2 = inst_cnt;
-
-    reg [31:0] nop_cnt;
-    always @(posedge clk) begin
-        if (rst) begin
-            nop_cnt <= 32'b0;
-        end
-        else if (current_state == ID && ~|IR) begin
-            nop_cnt <= nop_cnt + 1;
-        end
-    end
     assign cpu_perf_cnt_3 = nop_cnt;
+    assign cpu_perf_cnt_7 = jump_cnt;
 
 
     /* --- states --- */

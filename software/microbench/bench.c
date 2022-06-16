@@ -49,6 +49,8 @@ void run_once(Benchmark *b, Result *res) {
   res->pass = current->validate();
 }
 
+#define record(obj) if (res.obj < obj) obj = res.obj
+
 int main() {
   int pass = 1;
 
@@ -65,18 +67,26 @@ int main() {
     } else {
       unsigned long msec = ULONG_MAX;
       unsigned long memtime = ULONG_MAX;
+      unsigned long iftime = ULONG_MAX;
+      unsigned long wttime = ULONG_MAX;
+      unsigned long rdtime = ULONG_MAX;
       unsigned long inst = ULONG_MAX;
       unsigned long nop = ULONG_MAX;
+      unsigned long jump = ULONG_MAX;
       int succ = 1;
       for (int i = 0; i < REPEAT; i ++) {
         Result res;
         run_once(bench, &res);
         printk(res.pass ? "*" : "X");
         succ &= res.pass;
-        if (res.msec < msec) msec = res.msec;
-        if (res.memtime < memtime) memtime = res.memtime;
-        if (res.inst < inst) inst = res.inst;
-        if (res.nop < nop) nop = res.nop;
+        record(msec);
+        record(memtime);
+        record(iftime);
+        record(wttime);
+        record(rdtime);
+        record(inst);
+        record(nop);
+        record(jump);
       }
 
       if (succ) printk(" Passed.\n");
@@ -88,10 +98,16 @@ int main() {
       //   A benchmark is finished here, you can use printk to output some informantion.
       //   `msec' is intended indicate the time (or cycle),
       //   you can ignore according to your performance counters semantics.
-      printk("Cycles: %u\n", msec);
-      printk("Mem access cycles: %u\n", memtime);
-      printk("Instruction count: %u\n", inst);
-      printk("NOP count: %u\n", nop);
+      printk("--- Performance counter begin ---\n");
+      printk("Cycles:              %u\n", msec);
+      printk("Mem access cycles:   %u\n", memtime);
+      printk("  Instruction fetch: %u\n", iftime);
+      printk("  Data write:        %u\n", wttime);
+      printk("  Data read:         %u\n", rdtime);
+      printk("Instruction count:   %u\n", inst);
+      printk("  NOP:               %u\n", nop);
+      printk("  Jump & Branch:     %u\n", jump);
+      printk("---- Performance counter end ----\n");
     }
   }
 
