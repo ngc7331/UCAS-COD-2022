@@ -365,9 +365,16 @@ int main()
 #endif
 
     bench_done(&res);
-    printf("Cycles: %u\n", res.msec);
-    printf("Mem access cycles: %u\n", res.memtime);
-    printf("Instruction count: %u\n", res.inst);
+    printf("--- Performance counter begin ---\n");
+    printf("Cycles:              %u\n", res.msec);
+    printf("Mem access cycles:   %u\n", res.memtime);
+    printf("  Instruction fetch: %u\n", res.iftime);
+    printf("  Data write:        %u\n", res.wttime);
+    printf("  Data read:         %u\n", res.rdtime);
+    printf("Instruction count:   %u\n", res.inst);
+    printf("  NOP:               %u\n", res.nop);
+    printf("  Jump & Branch:     %u\n", res.jump);
+    printf("---- Performance counter end ----\n");
 
 	int result = comparing();
 	printf("benchmark finished\n");

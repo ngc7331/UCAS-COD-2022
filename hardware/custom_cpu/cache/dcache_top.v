@@ -134,7 +134,7 @@ module dcache_top (
             CACHE: begin
                 if (__from_cpu_mem_req)  // write -> no need for resp
                     next_state = WAIT;
-                else             // read -> resp
+                else                     // read -> resp
                     next_state = RESP;
             end
             RESP: begin
@@ -168,7 +168,7 @@ module dcache_top (
             REFILL: begin
                 if (__from_cpu_mem_req)  // write -> write cache
                     next_state = CACHE;
-                else             // read -> no need for write
+                else                     // read -> no need for write
                     next_state = RESP;
             end
             MEM_WT: begin
@@ -371,7 +371,7 @@ module dcache_top (
     wire [255:0] data_wdata, data_rdata[3:0], write_mask;
     assign write_mask = {{8{__from_cpu_mem_req_wstrb[3]}}, {8{__from_cpu_mem_req_wstrb[2]}}, {8{__from_cpu_mem_req_wstrb[1]}}, {8{__from_cpu_mem_req_wstrb[0]}}} << {from_cpu_offset, 3'b000};
     assign cache_write = current_state[2] & __from_cpu_mem_req;
-    assign data_wdata = cache_write ? ((__from_cpu_mem_req_wdata) << {from_cpu_offset, 3'b000}) & write_mask | cache_data & ~write_mask // write
+    assign data_wdata = cache_write ? ((__from_cpu_mem_req_wdata) << {from_cpu_offset, 3'b000}) & write_mask | cache_data & ~write_mask    // write
                       : {rd_buffer[7], rd_buffer[6], rd_buffer[5], rd_buffer[4], rd_buffer[3], rd_buffer[2], rd_buffer[1], rd_buffer[0]};  // read
     assign data_wen = {4{current_state[7]}} & evict_way | {4{cache_write}} & hit_way;  // REFILL on read / write miss ; CACHE on write hit
 
