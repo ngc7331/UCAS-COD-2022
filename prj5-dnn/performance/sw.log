@@ -1,0 +1,32 @@
+RUNNER_CNT = 0
+Completed FPGA configuration
+Launching sw_conv benchmark...
+tggetattr: Inappropriate ioctl for device
+reset: before MMIO access...
+reset: MMIO accessed
+axi_firewall_unblock: checking firewall status...
+axi_firewall_unblock: firewall status: 00000000
+main: before DDR accessing...
+main: DDR accessed...
+reset: before MMIO access...
+reset: MMIO accessed
+starting convolution
+starting pooling
+--- Performance counter begin ---
+Cycles:              1013489718
+Mem access cycles:   3847953863
+  Instruction fetch: 3714644275
+  Data write:        2652954
+  Data read:         130656879
+Instruction count:   515816702
+  NOP:               0
+  Jump & Branch:     86729952
+---- Performance counter end ----
+Passed!
+benchmark finished
+time 224934.58ms
+reset: before MMIO access...
+reset: MMIO accessed
+./software/workload/ucas-cod/benchmark/simple_test/dnn_test/riscv32/elf/sw_conv passed
+Hit good trap
+pass 1 / 1
