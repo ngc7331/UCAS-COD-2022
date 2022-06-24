@@ -48,7 +48,7 @@ module engine_core #(
 );
 	// TODO: Please add your logic design here
 
-    // --- ctrl & stat ---    
+    // --- ctrl & stat ---
     // regs
     reg [31:0] __src_base, __dest_base, __tail_ptr, __head_ptr, __dma_size, __ctrl_stat;
     always @(posedge clk) begin
@@ -65,6 +65,9 @@ module engine_core #(
         if (reg_wr_en[2]) begin
             __tail_ptr <= reg_wr_data;
         end
+        else if (rd_size == dma_size && wr_size == dma_size && wr_current_state[0] && rd_current_state[0]) begin
+            __tail_ptr <= __tail_ptr + 1;
+        end
     end
     always @(posedge clk) begin
         if (reg_wr_en[3]) begin
@@ -80,27 +83,41 @@ module engine_core #(
         if (reg_wr_en[5]) begin
             __ctrl_stat <= reg_wr_data;
         end
+        if (en && rd_size == dma_size && wr_size == dma_size && wr_current_state[0] && rd_current_state[0]) begin
+            __ctrl_stat[31] <= 1'b1;
+        end
     end
 
-    // output
+    // cpu output
     assign src_base  = __src_base;
     assign dest_base = __dest_base;
     assign tail_ptr  = __tail_ptr;
     assign head_ptr  = __head_ptr;
     assign dma_size  = __dma_size;
     assign ctrl_stat = __ctrl_stat;
+    assign intr = ctrl_stat[31];
+
+    // en
+    wire en;
+    assign en = ctrl_stat[0];
+
+    // burst control
+    wire [31:0] burst_total;
+    wire [2:0] last_burst_len = dma_size[4:2] - 1;
+    assign burst_total = {5'b0, dma_size[31:5]} + ~&last_burst_len;
 
 
+    // --- states ---
+    localparam IDLE = 4'b0001,
+               REQ  = 4'b0010,
+               RW   = 4'b0100,
+               FIFO = 4'b1000;
 
-    // states
-    localparam IDLE = 3'b001,
-               REQ  = 3'b010,
-               RW   = 3'b100;
 
     // --- rd ---
-    // regs
-    reg [2:0] rd_current_state;
-    reg [2:0] rd_next_state;
+    // state regs
+    reg [3:0] rd_current_state;
+    reg [3:0] rd_next_state;
 
     // current_state
     always @(posedge clk) begin
@@ -116,7 +133,7 @@ module engine_core #(
     always @(*) begin
         case (rd_current_state)
             IDLE: begin
-                if (wr_current_state == IDLE && head_ptr != tail_ptr) begin
+                if (en & wr_current_state[0] && head_ptr != tail_ptr) begin
                     rd_next_state = REQ;
                 end
                 else begin
@@ -127,7 +144,7 @@ module engine_core #(
                 if (rd_req_ready) begin
                     rd_next_state = RW;
                 end
-                else if (head_ptr == tail_ptr) begin
+                else if (rd_size == dma_size) begin
                     rd_next_state = IDLE;
                 end
                 else begin
@@ -148,14 +165,40 @@ module engine_core #(
         endcase
     end
 
-    // read_data
+    // read mem
+    reg [31:0] rd_size, rd_burst_counter;
+    always @(posedge clk) begin
+        if (rst | rd_current_state[0] & wr_current_state[0] & head_ptr != tail_ptr) begin
+            rd_size <= 32'b0;
+        end
+        else if (rd_current_state[2] & rd_valid & !fifo_is_full) begin  // RW
+            rd_size <= rd_size + 1;
+        end
+    end
 
+    always @(posedge clk) begin
+        if (rst | rd_current_state[0]) begin  // rst or INIT
+            rd_burst_counter <= 0;
+        end
+        else if (rd_current_state[2] & rd_valid & rd_last & !fifo_is_full) begin  // RW
+            rd_burst_counter <= rd_burst_counter + 1;
+        end
+    end
+
+    assign rd_req_valid = rd_current_state[1] & !fifo_is_full;
+    assign rd_req_addr = src_base + tail_ptr + {rd_burst_counter, 5'b0};
+    assign rd_req_len = burst_total == rd_burst_counter ? {2'b0, last_burst_len} : 5'b111;
+    assign rd_ready = rd_current_state[2] & !fifo_is_full;
+
+    // write fifo
+    assign fifo_wen = rd_ready & rd_valid;
+    assign fifo_wdata = rd_rdata;
 
 
     // --- wr ---
-    // regs
-    reg [2:0] wr_current_state;
-    reg [2:0] wr_next_state;
+    // state regs
+    reg [3:0] wr_current_state;
+    reg [3:0] wr_next_state;
 
     // current_state
     always @(posedge clk) begin
@@ -166,6 +209,84 @@ module engine_core #(
             wr_current_state <= wr_next_state;
         end
     end
+
+    // next_state
+    always @(*) begin
+        case (wr_current_state)
+            IDLE: begin
+                if (en & rd_current_state[0] & head_ptr != tail_ptr) begin
+                    wr_next_state = REQ;
+                end
+                else begin
+                    wr_next_state = IDLE;
+                end
+            end
+            REQ: begin
+                if (wr_req_ready & !fifo_is_empty) begin
+                    wr_next_state = FIFO;
+                end
+                else if (wr_size == dma_size) begin
+                    wr_next_state = IDLE;
+                end
+                else begin
+                    wr_next_state = REQ;
+                end
+            end
+            RW: begin
+                if (wr_ready & wr_last) begin
+                    wr_next_state = REQ;
+                end
+                else if (wr_ready & !fifo_is_empty) begin
+                    wr_next_state = FIFO;
+                end
+                else begin
+                    wr_next_state = RW;
+                end
+            end
+            FIFO: begin
+                wr_next_state = RW;
+            end
+            default: begin
+                wr_next_state = IDLE;
+            end
+        endcase
+    end
+
+    // read fifo
+    reg [31:0] fifo_rd_buffer;
+    assign fifo_rden = !fifo_is_empty & (wr_current_state[1] & wr_req_ready | wr_current_state[2] & wr_ready & !wr_last);  // read a new data from fifo when memory is ready
+    always @(posedge clk) begin
+        if (wr_current_state[3]) begin  // FIFO
+            fifo_rd_buffer <= fifo_rdata;
+        end
+    end
+
+    // write mem
+    reg [31:0] wr_size, wr_burst_counter;
+    always @(posedge clk) begin
+        if (rst | wr_current_state[0] & rd_current_state[0] & head_ptr != tail_ptr) begin
+            wr_size <= 32'b0;
+        end
+        else if (wr_current_state[2] & wr_ready) begin  // RW
+            wr_size <= wr_size + 1;
+        end
+    end
+
+    always @(posedge clk) begin
+        if (rst | wr_current_state[0]) begin  // rst or INIT
+            wr_burst_counter <= 0;
+        end
+        else if (wr_current_state[2] & wr_ready & wr_last) begin  // RW
+            wr_burst_counter <= wr_burst_counter + 1;
+        end
+    end
+
+    assign wr_req_valid = wr_current_state[1] & !fifo_is_empty;
+    assign wr_req_addr = dest_base + tail_ptr + {wr_burst_counter, 5'b0};
+    assign wr_req_len = wr_burst_counter == burst_total ? {2'b0, last_burst_len} : 5'b111;
+    assign wr_valid = wr_current_state[2];
+    assign wr_data = fifo_rd_buffer;
+    assign wr_last = wr_size[2:0] == wr_req_len[2:0];
 
 endmodule
 
