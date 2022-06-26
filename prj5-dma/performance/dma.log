@@ -1,0 +1,13 @@
+Prepare DMA engine
+Prepare SW data mover
+--- Performance counter begin ---
+Cycles:              83494814
+Mem access cycles:   80851045
+  Instruction fetch: 79203754
+  Data write:        1580016
+  Data read:         67818
+Instruction count:   1057193
+  NOP:               646
+  Jump & Branch:     262922
+---- Performance counter end ----
+benchmark finished

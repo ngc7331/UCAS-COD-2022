@@ -1,0 +1,12 @@
+Prepare SW data mover
+--- Performance counter begin ---
+Cycles:              188458257
+Mem access cycles:   182421522
+  Instruction fetch: 161270360
+  Data write:        2098558
+  Data read:         19053222
+Instruction count:   2362370
+  NOP:               328
+  Jump & Branch:     524804
+---- Performance counter end ----
+benchmark finished
