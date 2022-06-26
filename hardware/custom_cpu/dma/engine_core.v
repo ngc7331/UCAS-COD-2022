@@ -184,7 +184,7 @@ module engine_core #(
 
     assign rd_req_valid = rd_current_state[1] & !fifo_is_full;
     assign rd_req_addr = src_base + tail_ptr + {rd_burst_counter, 5'b0};
-    assign rd_req_len = burst_total == rd_burst_counter ? {2'b0, last_burst_len} : 5'b111;
+    assign rd_req_len = rd_last_burst ? {2'b0, last_burst_len} : 5'b111;
     assign rd_ready = rd_current_state[2] & !fifo_is_full;
 
     // write fifo
@@ -281,7 +281,7 @@ module engine_core #(
 
     assign wr_req_valid = wr_current_state[1] & !fifo_is_empty;
     assign wr_req_addr = dest_base + tail_ptr + {wr_burst_counter, 5'b0};
-    assign wr_req_len = wr_burst_counter == burst_total ? {2'b0, last_burst_len} : 5'b111;
+    assign wr_req_len = wr_last_burst ? {2'b0, last_burst_len} : 5'b111;
     assign wr_valid = wr_current_state[2];
     assign wr_data = fifo_rd_buffer;
     assign wr_last = wr_size == wr_req_len[2:0];
