@@ -13,8 +13,16 @@ git add COD-Lab
 # hardware
 rm -r hardware
 cp -r $HW hardware
+# dma: remove private information
 sed -i "2,21d" hardware/custom_cpu/dma/engine_core.v
 sed -i "1,9d" hardware/custom_cpu/dma/dma_engine.v
+# simple_cpu: add single_cycle & multi_cycle
+mkdir hardware/simple_cpu/single_cycle
+mv hardware/simple_cpu/simple_cpu.v hardware/simple_cpu/single_cycle
+cd COD-Lab && git checkout simple_cpu-multi_cycle && cd ..
+mkdir hardware/simple_cpu/multi_cycle
+cp $HW/simple_cpu/simple_cpu.v hardware/simple_cpu/multi_cycle
+cd COD-Lab && git checkout master && cd ..
 
 git add hardware/
 
